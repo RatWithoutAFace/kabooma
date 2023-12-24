@@ -1,0 +1,28 @@
+{
+
+    "channels": {
+        "enabled": true,
+        "channelNames": "get nuked",
+        "amount": 25
+    },
+
+    "webhook": {
+        "enabled": true,
+        "name": "Tsar Bomba",
+        "avatar": "https://cdn.ratface.lol/r/nuke.png",
+        "message": "@everyone"
+    },
+
+    "banning": {
+        "enabled": false,
+        "banReason": ""
+    },
+
+    "server": {
+        "enabled": true,
+        "nameChange": "Server Nuked",
+        "iconChange": "https://cdn.ratface.lol/r/nuke.png",
+        "bannerChange": "https://cdn.ratface.lol/r/nukeBanner.png"
+    }
+
+}
