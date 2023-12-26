@@ -1,3 +1,5 @@
+#!/bin/sh
+
 if command -v node &>/dev/null; then
   echo "Node.js is already installed. Proceeding with Kabooma dependencies installation."
 else
