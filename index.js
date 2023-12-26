@@ -175,7 +175,7 @@ function main(setup) {
                         newSequence(interaction, 'webhook', 'Enable mass webhook spam?')
                         break
                      case 'disablechannel':
-                        newConfig.channels.enabled == false
+                        newConfig.channels.enabled = false
                         newSequence(interaction, 'webhook', 'Enable mass webhook spam?')
                         break
                      case 'enablewebhook':
@@ -235,7 +235,7 @@ function main(setup) {
                      case 'enableserver':
                         const serverModal = new ModalBuilder()
                         .setCustomId('servermodal')
-                        .setTitle('Mass Webhook Spam Configuration')
+                        .setTitle('Server Settings Change Config')
                         const serverNameChange = new TextInputBuilder()
                         .setCustomId('servername')
                         .setLabel('serverNameChange : string')
@@ -265,16 +265,12 @@ function main(setup) {
                               nuke(interaction, `${name}.json`)
                            })
                         } else {
-                           var nameModal = new ModalBuilder()
-                           .setCustomId('namemodal')
-                           .setTitle('Config')
-                           var configName = new TextInputBuilder()
-                           .setCustomId('configname')
-                           .setLabel('NAME FOR CONFIGURATION FILE')
-                           .setStyle(TextInputStyle.Short)
-                           var nameRow1 = new ActionRowBuilder().addComponents(configName)
-                           nameModal.addComponents(nameRow1)
-                           interaction.showModal(nameModal)
+                           const nameConfig = new ButtonBuilder()
+                           .setCustomId(`nameconfig`)
+                           .setLabel('Name')
+                           .setStyle(ButtonStyle.Success)
+                           const row = new ActionRowBuilder().addComponents(nameConfig)
+                           await interaction.reply({content: 'Name your config.', components: [row]})
                         }
                         break
                      case 'disableserver':
@@ -285,22 +281,30 @@ function main(setup) {
                               nuke(interaction, `${name}.json`)
                            })
                         } else {
-                           var nameModal = new ModalBuilder()
-                           .setCustomId('namemodal')
-                           .setTitle('Config')
-                           var configName = new TextInputBuilder()
-                           .setCustomId('configname')
-                           .setLabel('NAME FOR CONFIGURATION FILE')
-                           .setStyle(TextInputStyle.Short)
-                           var nameRow1 = new ActionRowBuilder().addComponents(configName)
-                           nameModal.addComponents(nameRow1)
-                           interaction.showModal(nameModal)
+                           const nameConfig = new ButtonBuilder()
+                           .setCustomId(`nameconfig`)
+                           .setLabel('Name')
+                           .setStyle(ButtonStyle.Success)
+                           const row = new ActionRowBuilder().addComponents(nameConfig)
+                           await interaction.reply({content: 'Name your config.', components: [row]})
                         }
                         break
                      case 'namemodal':
                         await interaction.reply('New config successfully created!')
                         mainClient.off(Events.InteractionCreate, listener)
-                        fs.writeFileSync(`./configuration/nukes/${name}.json`, JSON.stringify(newConfig))
+                        fs.writeFileSync(`./configuration/nukes/${interaction.fields.getTextInputValue('configname')}.json`, JSON.stringify(newConfig))
+                        break
+                     case 'nameconfig':
+                        var nameModal = new ModalBuilder()
+                        .setCustomId('namemodal')
+                        .setTitle('Config')
+                        var configName = new TextInputBuilder()
+                        .setCustomId('configname')
+                        .setLabel('NAME FOR CONFIGURATION FILE')
+                        .setStyle(TextInputStyle.Short)
+                        var nameRow1 = new ActionRowBuilder().addComponents(configName)
+                        nameModal.addComponents(nameRow1)
+                        interaction.showModal(nameModal)
                         break
                      default:
                         await interaction.reply('An unexpected error occured at configCreate() switch!')
