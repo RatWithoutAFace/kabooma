@@ -26,7 +26,7 @@
     },
 
     "roles": {
-        "enabled": true
+        "enabled": false
     }
 
 }
