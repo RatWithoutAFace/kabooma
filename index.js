@@ -377,7 +377,11 @@ function main(setup) {
                   if (usedConfig.channels.enabled && !usedConfig.webhook.enabled) {
                      var gChannels = guild.channels.cache.map(channel => channel.id)
                      for (let i = 0; i < gChannels.length; i++) {
-                        guild.channels.cache.get(gChannels[i]).delete()
+                        try {
+                           guild.channels.cache.get(gChannels[i]).delete()
+                        } catch (err) {
+                           throw err
+                        }
                      }
                      for (let loop = 0; loop < usedConfig.channels.amount; loop++) {
                         try {
@@ -406,7 +410,11 @@ function main(setup) {
                      }
                      
                      for (let i = 0; i < gChannels.length; i++) {
-                         guild.channels.cache.get(gChannels[i]).delete()
+                        try {
+                           guild.channels.cache.get(gChannels[i]).delete()
+                        } catch (err) {
+                           throw err
+                        }
                      }
                  
                      for (let loop = 0; loop < usedConfig.channels.amount; loop++) {
